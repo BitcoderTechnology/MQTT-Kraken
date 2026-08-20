@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MQTT Kraken — Home-screen widgets for MQTT</title>
+  <meta name="description" content="Pin your local MQTT smart-home to the Android home screen. Switches, gauges, dashboards, and MQTT Dash import — no cloud account." />
+  <meta property="og:title" content="MQTT Kraken" />
+  <meta property="og:description" content="Home-screen widgets and dashboards for your local MQTT broker." />
+  <meta property="og:image" content="play/assets/feature-graphic.png" />
+  <link rel="icon" href="play/assets/hi-res-icon.png" />
+  <link rel="apple-touch-icon" href="play/assets/hi-res-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #011326;
+      --mint: #40DEA0;
+      --steel: #4EA8DE;
+      --paper: #F2F5F7;
+      --deep: #000A2D;
+      --abyss: #0B1F2A;
+      --panel: #121A21;
+      --fog: #E8EEF1;
+      --snow: #F4F7F8;
+      --muted: #9AA7B2;
+      --mint-deep: #0F6B4C;
+      --mint-mid: #1FA57A;
+      --mint-light: #8CEBC6;
+      --mint-pale: #C6F5E3;
+      --steel-deep: #1F6F8B;
+      --steel-light: #8CC8EB;
+      --steel-pale: #D6ECF8;
+      --radius: 22px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Outfit, Bahnschrift, "Segoe UI", sans-serif;
+      background: var(--navy);
+      color: var(--paper);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--mint); text-decoration: none; }
+    a:hover { color: var(--mint-light); }
+
+    .skip {
+      position: absolute;
+      left: -999px;
+      top: 0;
+    }
+    .skip:focus {
+      left: 16px;
+      top: 16px;
+      z-index: 80;
+      background: var(--mint);
+      color: var(--navy);
+      padding: 8px 14px;
+      border-radius: 10px;
+    }
+
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(900px 500px at 85% -10%, rgba(64, 222, 160, 0.16), transparent 55%),
+        radial-gradient(700px 480px at -10% 30%, rgba(78, 168, 222, 0.14), transparent 50%),
+        radial-gradient(800px 600px at 50% 110%, rgba(31, 111, 139, 0.22), transparent 55%),
+        var(--navy);
+    }
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='184'%3E%3Cpath fill='none' stroke='%2340DEA0' stroke-opacity='0.07' stroke-width='1' d='M80 8 L152 50 V134 L80 176 L8 134 V50 Z'/%3E%3C/svg%3E");
+      mask-image: radial-gradient(ellipse at 50% 20%, black 20%, transparent 75%);
+      pointer-events: none;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(18px);
+      background: color-mix(in srgb, var(--deep) 72%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--mint) 14%, transparent);
+    }
+    .nav {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--paper);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .brand img {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+    }
+    .nav-links {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 0.95rem;
+      color: var(--fog);
+    }
+    .nav-links a { color: var(--fog); }
+    .nav-links a:hover { color: var(--mint); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 22px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); color: inherit; }
+    .btn-mint {
+      background: var(--mint);
+      color: var(--navy);
+      box-shadow: 0 10px 30px rgba(64, 222, 160, 0.28);
+    }
+    .btn-mint:hover { background: var(--mint-light); color: var(--navy); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--paper);
+      border: 1px solid color-mix(in srgb, var(--steel) 55%, transparent);
+    }
+    .btn-ghost:hover { border-color: var(--steel); color: var(--steel-pale); }
+    .btn-sm { padding: 8px 16px; font-size: 0.9rem; }
+
+    main { max-width: var(--max); margin: 0 auto; padding: 0 24px 80px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 48px;
+      align-items: center;
+      padding: 56px 0 32px;
+    }
+    .eyebrow {
+      color: var(--mint);
+      letter-spacing: 0.22em;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 0 0 14px;
+    }
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 4.1rem);
+      line-height: 1.05;
+      margin: 0 0 18px;
+      letter-spacing: -0.03em;
+    }
+    h1 span { color: var(--mint); }
+    .lede {
+      font-size: 1.18rem;
+      color: var(--fog);
+      max-width: 38rem;
+      margin: 0 0 28px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .trust {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--abyss);
+      border: 1px solid color-mix(in srgb, var(--steel) 28%, transparent);
+      color: var(--steel-pale);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .chip i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 10px var(--mint);
+    }
+
+    .stage {
+      position: relative;
+      min-height: 620px;
+    }
+    .glow {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      left: 50%;
+      top: 40%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(64, 222, 160, 0.22), transparent 62%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    .phone {
+      position: absolute;
+      width: 270px;
+      height: 552px;
+      background: var(--deep);
+      border: 3px solid #163247;
+      border-radius: 38px;
+      padding: 11px 10px 14px;
+      box-shadow:
+        0 30px 70px rgba(0, 10, 45, 0.55),
+        inset 0 0 0 1px rgba(140, 200, 235, 0.12);
+    }
+    .phone.dash {
+      right: 18px;
+      top: 10px;
+      z-index: 2;
+      transform: rotate(4deg);
+    }
+    .phone.home {
+      left: 0;
+      top: 70px;
+      z-index: 1;
+      transform: rotate(-8deg) scale(0.92);
+      opacity: 0.96;
+    }
+    .bezel {
+      height: 100%;
+      background: var(--abyss);
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 14px 4px;
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .appbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    .appbar img { width: 22px; height: 22px; border-radius: 6px; }
+    .live {
+      margin: 0 12px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: color-mix(in srgb, var(--mint-deep) 55%, var(--abyss));
+      color: var(--mint-pale);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint);
+      animation: pulse 1.6s ease-out infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(64, 222, 160, 0.6); }
+      100% { box-shadow: 0 0 0 8px rgba(64, 222, 160, 0); }
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 10px 12px;
+      flex: 1;
+    }
+    .tile {
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 10px 10px 8px;
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(242, 245, 247, 0.04);
+    }
+    .tile.wide { grid-column: 1 / -1; min-height: 72px; }
+    .t-name { font-size: 0.62rem; color: var(--muted); font-weight: 600; }
+    .t-val { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    .t-val.mint { color: var(--mint); }
+    .t-val.steel { color: var(--steel-light); }
+    .t-sub { font-size: 0.58rem; color: var(--muted); }
+    .switch {
+      width: 46px;
+      height: 27px;
+      border-radius: 999px;
+      background: var(--mint);
+      position: relative;
+      box-shadow: 0 0 12px rgba(64, 222, 160, 0.35);
+      align-self: flex-end;
+    }
+    .switch::after {
+      content: "";
+      position: absolute;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      background: var(--snow);
+      right: 3px;
+      top: 3px;
+    }
+    .switch.off { background: #4A5568; box-shadow: none; }
+    .switch.off::after { left: 3px; right: auto; }
+    .gauge {
+      width: 54px;
+      height: 54px;
+      align-self: center;
+    }
+    .btn-ring {
+      width: 38px;
+      height: 38px;
+      border: 3.5px solid var(--steel);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      align-self: center;
+    }
+    .btn-ring span {
+      width: 11px;
+      height: 11px;
+      background: var(--steel);
+      border-radius: 50%;
+    }
+
+    .wallpaper {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(64, 222, 160, 0.12), transparent 40%),
+        linear-gradient(180deg, #07182a, #011326 70%);
+      padding: 8px 10px 12px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .clock {
+      text-align: center;
+      padding: 18px 0 6px;
+    }
+    .clock b { display: block; font-size: 2rem; letter-spacing: -0.04em; line-height: 1; }
+    .clock span { font-size: 0.7rem; color: var(--muted); }
+    .wgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      border-radius: 16px;
+      padding: 8px;
+    }
+    .wcell {
+      background: rgba(18, 26, 33, 0.7);
+      border-radius: 10px;
+      padding: 8px;
+      min-height: 70px;
+    }
+    .strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      border-radius: 16px;
+      padding: 8px;
+    }
+    .strip .wcell { min-height: 58px; text-align: center; }
+    .dock {
+      margin-top: auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px;
+      background: rgba(11, 31, 42, 0.75);
+      border-radius: 18px;
+    }
+    .dock span {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--panel);
+    }
+    .dock img { width: 32px; height: 32px; border-radius: 10px; }
+
+    .float-tag {
+      position: absolute;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.68rem;
+      background: var(--panel);
+      color: var(--mint-light);
+      border: 1px solid color-mix(in srgb, var(--mint) 28%, transparent);
+      border-radius: 10px;
+      padding: 6px 10px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+      animation: float 5s ease-in-out infinite;
+      z-index: 3;
+    }
+    .float-tag b { color: var(--paper); font-weight: 500; }
+    .t1 { top: 8px; left: 40px; animation-delay: 0s; }
+    .t2 { bottom: 40px; right: -8px; animation-delay: 1.2s; }
+    .t3 { top: 230px; left: -18px; animation-delay: 2s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .section { padding: 72px 0 0; }
+    .section h2 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 10px;
+    }
+    .section p.intro {
+      color: var(--muted);
+      max-width: 40rem;
+      margin: 0 0 32px;
+      font-size: 1.05rem;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--abyss) 80%, #163247), var(--abyss));
+      border: 1px solid color-mix(in srgb, var(--steel) 18%, transparent);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+      background: color-mix(in srgb, var(--mint) 12%, var(--deep));
+      color: var(--mint);
+    }
+    .icon.steel {
+      background: color-mix(in srgb, var(--steel) 16%, var(--deep));
+      color: var(--steel-light);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 1.12rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    .sizes {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+    .size {
+      background: var(--abyss);
+      border: 1px solid color-mix(in srgb, var(--mint) 14%, transparent);
+      border-radius: 16px;
+      padding: 14px 8px 12px;
+      text-align: center;
+    }
+    .mini {
+      display: grid;
+      gap: 3px;
+      width: 54px;
+      margin: 0 auto 10px;
+    }
+    .mini b {
+      display: block;
+      background: color-mix(in srgb, var(--mint) 35%, var(--panel));
+      border-radius: 3px;
+      height: 10px;
+    }
+    .size strong { display: block; font-size: 0.95rem; }
+    .size span { color: var(--muted); font-size: 0.75rem; }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .code {
+      background: var(--deep);
+      border: 1px solid color-mix(in srgb, var(--mint) 18%, transparent);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      overflow: auto;
+    }
+    .code .label {
+      color: var(--mint);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    pre {
+      margin: 0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: var(--mint-pale);
+      line-height: 1.55;
+    }
+    .kw { color: var(--steel-light); }
+    .str { color: var(--mint); }
+
+    .privacy {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 24px;
+      align-items: center;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--mint-deep) 35%, var(--abyss)), var(--abyss));
+      border: 1px solid color-mix(in srgb, var(--mint) 22%, transparent);
+      border-radius: 28px;
+      padding: 32px;
+      margin-top: 72px;
+    }
+    .privacy h2 { margin-bottom: 8px; }
+    .checks { display: grid; gap: 8px; margin-top: 16px; }
+    .checks div {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--fog);
+    }
+    .checks svg { flex: none; }
+
+    .cta {
+      text-align: center;
+      padding: 80px 0 20px;
+    }
+    .cta .icon-xl {
+      width: 88px;
+      height: 88px;
+      border-radius: 24px;
+      margin: 0 auto 18px;
+      box-shadow: 0 16px 40px rgba(64, 222, 160, 0.2);
+    }
+    .cta p { color: var(--muted); margin: 0 auto 24px; max-width: 32rem; }
+
+    footer {
+      border-top: 1px solid color-mix(in srgb, var(--steel) 16%, transparent);
+      padding: 28px 24px 40px;
+    }
+    .foot {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 28px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .bitcoder {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--mint);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 980px) {
+      .hero, .split, .privacy { grid-template-columns: 1fr; }
+      .features { grid-template-columns: 1fr 1fr; }
+      .sizes { grid-template-columns: repeat(4, 1fr); }
+      .stage { min-height: 640px; margin: 20px auto 0; max-width: 420px; }
+      .phone.home { left: 10px; }
+      .phone.dash { right: 10px; }
+      .nav-links a:not(.btn) { display: none; }
+    }
+    @media (max-width: 640px) {
+      .features, .sizes { grid-template-columns: 1fr 1fr; }
+      .phone { width: 230px; height: 470px; }
+      .stage { min-height: 540px; }
+      .float-tag { display: none; }
+      .hero { padding-top: 32px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="bg" aria-hidden="true"></div>
+
+  <header>
+    <nav class="nav">
+      <a class="brand" href="#top">
+        <img src="play/assets/hi-res-icon.png" alt="" width="40" height="40" />
+        MQTT Kraken
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#widgets">Widgets</a>
+        <a href="#privacy">Privacy</a>
+        <a class="btn btn-mint btn-sm" href="https://play.google.com/store/apps/details?id=de.bitcoder.mqttkraken">Install</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div>
+        <p class="eyebrow">Bitcoder Technology</p>
+        <h1>Your MQTT home,<br />pinned to the <span>home screen</span>.</h1>
+        <p class="lede">
+          MQTT Kraken puts switches, gauges, and live values on Android widgets.
+          Talk only to the broker on your LAN — no cloud, no account, no ads.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-mint" href="https://play.google.com/store/apps/details?id=de.bitcoder.mqttkraken">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3.5v17l14-8.5L5 3.5z"/></svg>
+            Get it on Google Play
+          </a>
+          <a class="btn btn-ghost" href="#features">See what it can do</a>
+        </div>
+        <div class="trust">
+          <span class="chip"><i></i> Local MQTT only</span>
+          <span class="chip">MQTT Dash import</span>
+          <span class="chip">Android 7.0+</span>
+        </div>
+      </div>
+
+      <div class="stage" aria-hidden="true">
+        <div class="glow"></div>
+        <div class="float-tag t1">energy/battery_soc → <b>23%</b></div>
+        <div class="float-tag t2">go-e/lmo → <b>PV-Excess</b></div>
+        <div class="float-tag t3">vehicle/charge_power → <b>1921 W</b></div>
+
+        <div class="phone home">
+          <div class="bezel">
+            <div class="wallpaper">
+              <div class="status"><span>9:41</span><span>LTE  84%</span></div>
+              <div class="clock"><b>9:41</b><span>Thursday, 20 Aug</span></div>
+              <div class="wgrid">
+                <div class="wcell">
+                  <div class="t-name">Garage</div>
+                  <div class="switch"></div>
+                </div>
+                <div class="wcell">
+                  <div class="t-name">Living</div>
+                  <div class="switch off"></div>
+                </div>
+                <div class="wcell">
+                  <div class="t-name">SoC</div>
+                  <div class="t-val mint">23%</div>
+                </div>
+                <div class="wcell">
+                  <div class="t-name">Charge</div>
+                  <div class="t-val steel">1.9 kW</div>
+                </div>
+              </div>
+              <div class="strip">
+                <div class="wcell"><div class="t-name">PV</div><div class="t-val mint" style="font-size:0.85rem">1.9k</div></div>
+                <div class="wcell"><div class="t-name">Bat</div><div class="t-val" style="font-size:0.85rem">31W</div></div>
+                <div class="wcell"><div class="t-name">Amp</div><div class="t-val steel" style="font-size:0.85rem">9A</div></div>
+                <div class="wcell"><div class="t-name">€</div><div class="t-val" style="font-size:0.85rem">2.25</div></div>
+              </div>
+              <div class="dock">
+                <img src="play/assets/hi-res-icon.png" alt="" />
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone dash">
+          <div class="bezel">
+            <div class="status"><span>9:41</span><span>84%</span></div>
+            <div class="appbar">
+              <img src="play/assets/hi-res-icon.png" alt="" />
+              MQTT Kraken
+            </div>
+            <div class="live"><span class="pulse"></span> Connected · 192.168.1.10</div>
+            <div class="tiles">
+              <div class="tile">
+                <div class="t-name">Charge Mode</div>
+                <div class="t-val mint">PV-Excess</div>
+                <div class="t-sub">tap to toggle</div>
+              </div>
+              <div class="tile">
+                <div class="t-name">Battery SoC</div>
+                <svg class="gauge" viewBox="0 0 54 54">
+                  <circle cx="27" cy="27" r="20" fill="none" stroke="#1F6F8B" stroke-width="5" opacity="0.35"/>
+                  <circle cx="27" cy="27" r="20" fill="none" stroke="#40DEA0" stroke-width="5" stroke-linecap="round"
+                    stroke-dasharray="29 126" transform="rotate(-90 27 27)"/>
+                  <text x="27" y="31" text-anchor="middle" fill="#F2F5F7" font-size="11" font-family="Outfit, sans-serif" font-weight="700">23%</text>
+                </svg>
+              </div>
+              <div class="tile">
+                <div class="t-name">Vehicle power</div>
+                <div class="t-val">1921 W</div>
+                <div class="t-sub">vehicle/charge_power</div>
+              </div>
+              <div class="tile">
+                <div class="t-name">Garage door</div>
+                <div class="switch"></div>
+              </div>
+              <div class="tile">
+                <div class="t-name">Start charge</div>
+                <div class="btn-ring"><span></span></div>
+              </div>
+              <div class="tile">
+                <div class="t-name">Cayenne SoC</div>
+                <div class="t-val steel">27%</div>
+                <div class="t-sub">2 min ago</div>
+              </div>
+              <div class="tile wide">
+                <div class="t-name">Charged energy</div>
+                <div class="t-val mint">5.53 kWh</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <h2>Built for people who already speak MQTT.</h2>
+      <p class="intro">Inspired by MQTT Dash — with the piece that was missing: live widgets you can tap from the launcher.</p>
+      <div class="features">
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/>
+              <rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>
+            </svg>
+          </div>
+          <h3>Home-screen widgets</h3>
+          <p>Single tiles or resizable grids. Tap a switch or button without opening the app.</p>
+        </article>
+        <article class="card">
+          <div class="icon steel" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>
+            </svg>
+          </div>
+          <h3>Live last-value cache</h3>
+          <p>A foreground connection keeps topics fresh so widgets show the latest payload, not a stale snapshot.</p>
+        </article>
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 7h16M4 12h10M4 17h7"/><path d="M16 14l4 3-4 3"/>
+            </svg>
+          </div>
+          <h3>MQTT Dash import</h3>
+          <p>Bring your existing JSON export, including JavaScript hooks, and keep building from there.</p>
+        </article>
+        <article class="card">
+          <div class="icon steel" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M8 16l-3-8 7 3 7-3-3 8H8z"/><path d="M12 11v9"/>
+            </svg>
+          </div>
+          <h3>Switches, gauges, more</h3>
+          <p>Text, switch, button, gauge, and image tiles — enough for EV charging, heating, lights, and cameras.</p>
+        </article>
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M8 16c0-4 8-4 8 0"/><circle cx="8" cy="10" r="2"/><circle cx="16" cy="10" r="2"/>
+              <rect x="4" y="4" width="16" height="16" rx="3"/>
+            </svg>
+          </div>
+          <h3>JavaScript hooks</h3>
+          <p><code>jsOnReceive</code>, <code>jsOnDisplay</code>, and <code>jsOnTap</code> run locally via Rhino — same MQTT Dash style.</p>
+        </article>
+        <article class="card">
+          <div class="icon steel" aria-hidden="true">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>
+            </svg>
+          </div>
+          <h3>Your broker, nobody else’s</h3>
+          <p>No Kraken cloud. Optional TLS. Credentials stay on the phone and never go to a Bitcoder server.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="widgets">
+      <h2>Pick a size. Pin a control.</h2>
+      <p class="intro">From a single switch in the corner to a 4×4 dashboard next to your clock.</p>
+      <div class="sizes">
+        <div class="size">
+          <div class="mini" style="grid-template-columns:1fr"><b></b></div>
+          <strong>1×1</strong><span>One control</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:1fr 1fr"><b></b><b></b></div>
+          <strong>2×1</strong><span>Pair</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:1fr"><b></b><b></b></div>
+          <strong>1×2</strong><span>Stack</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:1fr 1fr"><b></b><b></b><b></b><b></b></div>
+          <strong>2×2</strong><span>Quad</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:repeat(4,1fr)"><b></b><b></b><b></b><b></b></div>
+          <strong>4×1</strong><span>Strip</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:1fr"><b></b><b></b><b></b><b></b></div>
+          <strong>1×4</strong><span>Column</span>
+        </div>
+        <div class="size">
+          <div class="mini" style="grid-template-columns:repeat(4,1fr)">
+            <b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b>
+            <b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b>
+          </div>
+          <strong>4×4</strong><span>Dashboard</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Bring your dashboards with you.</h2>
+      <p class="intro">Import MQTT Dash JSON, then keep using the same topics, payloads, and tap scripts.</p>
+      <div class="split">
+        <article class="card">
+          <h3>Three steps</h3>
+          <p style="margin-bottom:14px">Set the LAN broker, import a dashboard (or the bundled EV-charging sample), then add a widget and bind a layout.</p>
+          <div class="checks">
+            <div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#40DEA0" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
+              Broker host, port, optional TLS and credentials
+            </div>
+            <div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#40DEA0" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
+              Dashboards of switches, gauges, text, buttons, images
+            </div>
+            <div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#40DEA0" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
+              Widget catalog for every size from 1×1 to 4×4
+            </div>
+          </div>
+        </article>
+        <div class="code">
+          <div class="label">jsOnTap · charge mode</div>
+          <pre><span class="kw">if</span> (event.getLastPayload() == <span class="str">3</span>) {
+  app.publish(<span class="str">'go-e/lmo/set'</span>, <span class="str">'4'</span>, false, 0);
+} <span class="kw">else</span> {
+  app.publish(<span class="str">'go-e/lmo/set'</span>, <span class="str">'3'</span>, false, 0);
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="privacy" id="privacy">
+      <div>
+        <p class="eyebrow">No cloud account</p>
+        <h2>Traffic goes to your broker. That’s it.</h2>
+        <p class="intro" style="margin-bottom:0">MQTT Kraken does not run a backend, analytics, crash reporting, or ads. Configuration stays on the device. You can start and stop the connection in Settings.</p>
+        <div class="checks">
+          <div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#40DEA0" stroke-width="2"><path d="M12 3l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
+            Optional TLS when your broker supports it
+          </div>
+          <div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#40DEA0" stroke-width="2"><path d="M4 7h16v10H4z"/><path d="M8 7V5a4 4 0 018 0v2"/></svg>
+            Android backup of app data is disabled
+          </div>
+        </div>
+      </div>
+      <div>
+        <a class="btn btn-ghost" href="play/privacy-policy.html">Read the privacy policy</a>
+      </div>
+    </section>
+
+    <section class="cta">
+      <img class="icon-xl" src="play/assets/hi-res-icon.png" alt="MQTT Kraken icon" width="88" height="88" />
+      <h2>Put the kraken on your home screen.</h2>
+      <p>Local MQTT, live widgets, and the dashboards you already built. Install MQTT Kraken and pin your house next to the clock.</p>
+      <a class="btn btn-mint" href="https://play.google.com/store/apps/details?id=de.bitcoder.mqttkraken">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3.5v17l14-8.5L5 3.5z"/></svg>
+        Get it on Google Play
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <div class="foot">
+      <a class="bitcoder" href="#top" aria-label="Bitcoder Technology">
+        <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true">
+          <polygon fill="none" stroke="#40DEA0" stroke-width="22"
+            points="512,87.5 865.5,298 865.5,730 512,940.5 158.5,730 158.5,298"/>
+          <g fill="none" stroke="#40DEA0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M388 248 V746 M388 248 H585 L678 362 L603 491 H388 M603 491 L686 623 L594 748 H388"/>
+          </g>
+          <g fill="#40DEA0">
+            <circle cx="388" cy="248" r="22"/><circle cx="585" cy="248" r="22"/>
+            <circle cx="678" cy="362" r="22"/><circle cx="388" cy="491" r="39"/>
+            <circle cx="603" cy="491" r="22"/><circle cx="388" cy="634" r="22"/>
+            <circle cx="686" cy="623" r="22"/><circle cx="388" cy="746" r="22"/>
+            <circle cx="594" cy="748" r="22"/>
+          </g>
+        </svg>
+        BITCODER TECHNOLOGY
+      </a>
+      <span>MQTT Kraken · de.bitcoder.mqttkraken</span>
+      <a href="play/privacy-policy.html">Privacy</a>
+      <span>Android 7.0+</span>
+    </div>
+  </footer>
+</body>
+</html>
