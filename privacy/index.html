@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MQTT Kraken privacy policy</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>MQTT Kraken privacy policy</h1>
+  <p>Last updated: 20 August 2026</p>
+  <p>
+    MQTT Kraken is a local Android app for MQTT dashboards and home-screen widgets
+    (package <code>de.bitcoder.mqttkraken</code>).
+  </p>
+
+  <h2>What the app stores on your device</h2>
+  <p>All configuration stays on the phone. This can include:</p>
+  <ul>
+    <li>MQTT broker host, port, client id, and optional username and password</li>
+    <li>Dashboards, tiles, topics, payloads, and optional JavaScript hooks you enter or import</li>
+    <li>Widget layout bindings and last-known MQTT payloads used to refresh widgets</li>
+    <li>Appearance settings such as theme and battery options</li>
+  </ul>
+  <p>
+    Broker passwords are stored in the app database on the device. They are not
+    encrypted at rest in the current version. Android cloud backup of this data is
+    disabled so credentials are not uploaded to Google backup.
+  </p>
+
+  <h2>What is sent over the network</h2>
+  <p>
+    The app connects only to the MQTT broker you configure. Messages you subscribe
+    to or publish (including from JavaScript hooks) go to that broker. MQTT Kraken
+    does not operate its own cloud backend, accounts, analytics, crash reporting,
+    or advertising.
+  </p>
+  <p>
+    If you disable TLS, MQTT traffic on your network is not encrypted. Use TLS
+    when the broker supports it, especially off your LAN.
+  </p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>Internet / network state</strong> — connect to your MQTT broker</li>
+    <li><strong>Foreground service (data sync)</strong> — keep the MQTT session alive so widgets stay up to date</li>
+    <li><strong>Notifications</strong> — required by Android for that foreground service</li>
+    <li><strong>Boot completed</strong> — optionally restart the MQTT connection after reboot</li>
+  </ul>
+
+  <h2>Sharing</h2>
+  <p>
+    MQTT Kraken does not sell or share your data with the developer or with
+    advertising partners. The only third party that receives MQTT traffic is the
+    broker you choose.
+  </p>
+
+  <h2>Children</h2>
+  <p>The app is not directed at children.</p>
+
+  <h2>Retention and deletion</h2>
+  <p>
+    Data remains on the device until you change it in the app or clear the app
+    storage / uninstall MQTT Kraken.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Privacy questions: use the contact email on the MQTT Kraken Google Play listing.
+  </p>
+</body>
+</html>
