@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MQTT Kraken — Home-screen widgets for MQTT</title>
-  <meta name="description" content="Pin your local MQTT smart-home to the Android home screen. Switches, gauges, dashboards, and MQTT Dash import — no cloud account." />
+  <meta name="description" content="Pin your local MQTT smart-home to the Android home screen. Switches, gauges, dashboards, and JSON import — no cloud account." />
   <meta property="og:title" content="MQTT Kraken" />
   <meta property="og:description" content="Home-screen widgets and dashboards for your local MQTT broker." />
   <meta property="og:image" content="play/assets/feature-graphic.png" />
@@ -660,7 +660,7 @@
         </div>
         <div class="trust">
           <span class="chip"><i></i> Local MQTT only</span>
-          <span class="chip">MQTT Dash import</span>
+          <span class="chip">JSON import</span>
           <span class="chip">Android 7.0+</span>
         </div>
       </div>
@@ -761,7 +761,7 @@
 
     <section class="section" id="features">
       <h2>Built for people who already speak MQTT.</h2>
-      <p class="intro">Inspired by MQTT Dash — with the piece that was missing: live widgets you can tap from the launcher.</p>
+      <p class="intro">Live widgets you can tap from the launcher — switches, gauges, and values that stay in sync with your broker.</p>
       <div class="features">
         <article class="card">
           <div class="icon" aria-hidden="true">
@@ -788,8 +788,8 @@
               <path d="M4 7h16M4 12h10M4 17h7"/><path d="M16 14l4 3-4 3"/>
             </svg>
           </div>
-          <h3>MQTT Dash import</h3>
-          <p>Bring your existing JSON export, including JavaScript hooks, and keep building from there.</p>
+          <h3>JSON import</h3>
+          <p>Bring an existing dashboard export, including JavaScript hooks, and keep building from there.</p>
         </article>
         <article class="card">
           <div class="icon steel" aria-hidden="true">
@@ -808,7 +808,7 @@
             </svg>
           </div>
           <h3>JavaScript hooks</h3>
-          <p><code>jsOnReceive</code>, <code>jsOnDisplay</code>, and <code>jsOnTap</code> run locally via Rhino — same MQTT Dash style.</p>
+          <p><code>jsOnReceive</code>, <code>jsOnDisplay</code>, and <code>jsOnTap</code> run locally via Rhino against the topics you configure.</p>
         </article>
         <article class="card">
           <div class="icon steel" aria-hidden="true">
@@ -862,7 +862,7 @@
 
     <section class="section">
       <h2>Bring your dashboards with you.</h2>
-      <p class="intro">Import MQTT Dash JSON, then keep using the same topics, payloads, and tap scripts.</p>
+      <p class="intro">Import a JSON dashboard, then keep using the same topics, payloads, and tap scripts.</p>
       <div class="split">
         <article class="card">
           <h3>Three steps</h3>
